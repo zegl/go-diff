@@ -23,7 +23,7 @@ func ParseMultiFileDiff(diff []byte) ([]*FileDiff, error) {
 // NewMultiFileDiffReader returns a new MultiFileDiffReader that reads
 // a multi-file unified diff from r.
 func NewMultiFileDiffReader(r io.Reader) *MultiFileDiffReader {
-	return &MultiFileDiffReader{reader: newLineReader(r)}
+	return &MultiFileDiffReader{reader: newLineReader(r, true)}
 }
 
 // MultiFileDiffReader reads a multi-file unified diff.
@@ -156,10 +156,21 @@ func ParseFileDiff(diff []byte) (*FileDiff, error) {
 	return NewFileDiffReader(bytes.NewReader(diff)).Read()
 }
 
+// ParseFileDiffKeepCr parses a file unified diff.
+func ParseFileDiffKeepCr(diff []byte) (*FileDiff, error) {
+	return NewFileDiffReaderKeepCr(bytes.NewReader(diff)).Read()
+}
+
 // NewFileDiffReader returns a new FileDiffReader that reads a file
 // unified diff.
 func NewFileDiffReader(r io.Reader) *FileDiffReader {
-	return &FileDiffReader{reader: &lineReader{reader: bufio.NewReader(r)}}
+	return &FileDiffReader{reader: &lineReader{reader: bufio.NewReader(r), dropCr: true}}
+}
+
+// NewFileDiffReaderKeepCr returns a new FileDiffReader that reads a file
+// unified diff.
+func NewFileDiffReaderKeepCr(r io.Reader) *FileDiffReader {
+	return &FileDiffReader{reader: &lineReader{reader: bufio.NewReader(r), dropCr: false}}
 }
 
 // FileDiffReader reads a unified file diff.

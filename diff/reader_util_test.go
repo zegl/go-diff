@@ -51,7 +51,7 @@ index 0000000..3be2928`,
 			in := bufio.NewReader(strings.NewReader(test.input))
 			out := []string{}
 			for {
-				l, err := readLine(in)
+				l, err := readLine(in, true)
 				if err == io.EOF {
 					break
 				}
@@ -75,7 +75,7 @@ index 0000000..3be2928
 
 `
 
-	in := newLineReader(strings.NewReader(input))
+	in := newLineReader(strings.NewReader(input), true)
 	out := []string{}
 	for i := 0; i < 4; i++ {
 		l, err := in.readLine()
@@ -108,7 +108,7 @@ func TestLineReader_NextLine(t *testing.T) {
 bbbrest of line
 ccc rest of line`
 
-	in := newLineReader(strings.NewReader(input))
+	in := newLineReader(strings.NewReader(input), true)
 
 	type assertion struct {
 		prefix string

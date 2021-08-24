@@ -9,14 +9,18 @@ import (
 
 var ErrLineReaderUninitialized = errors.New("line reader not initialized")
 
-func newLineReader(r io.Reader) *lineReader {
-	return &lineReader{reader: bufio.NewReader(r)}
+func newLineReader(r io.Reader, dropCr bool) *lineReader {
+	return &lineReader{
+		reader: bufio.NewReader(r),
+		dropCr: dropCr,
+	}
 }
 
 // lineReader is a wrapper around a bufio.Reader that caches the next line to
 // provide lookahead functionality for the next two lines.
 type lineReader struct {
 	reader *bufio.Reader
+	dropCr bool
 
 	cachedNextLine    []byte
 	cachedNextLineErr error
@@ -26,7 +30,7 @@ type lineReader struct {
 // the lineReader.
 func (l *lineReader) readLine() ([]byte, error) {
 	if l.cachedNextLine == nil && l.cachedNextLineErr == nil {
-		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader)
+		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader, l.dropCr)
 	}
 
 	if l.cachedNextLineErr != nil {
@@ -35,7 +39,7 @@ func (l *lineReader) readLine() ([]byte, error) {
 
 	next := l.cachedNextLine
 
-	l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader)
+	l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader, l.dropCr)
 
 	return next, nil
 }
@@ -47,7 +51,7 @@ func (l *lineReader) readLine() ([]byte, error) {
 // be used when at the end of the file.
 func (l *lineReader) nextLineStartsWith(prefix string) (bool, error) {
 	if l.cachedNextLine == nil && l.cachedNextLineErr == nil {
-		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader)
+		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader, l.dropCr)
 	}
 
 	return l.lineHasPrefix(l.cachedNextLine, prefix, l.cachedNextLineErr)
@@ -64,7 +68,7 @@ func (l *lineReader) nextLineStartsWith(prefix string) (bool, error) {
 // returned.
 func (l *lineReader) nextNextLineStartsWith(prefix string) (bool, error) {
 	if l.cachedNextLine == nil && l.cachedNextLineErr == nil {
-		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader)
+		l.cachedNextLine, l.cachedNextLineErr = readLine(l.reader, l.dropCr)
 	}
 
 	next, err := l.reader.Peek(len(prefix))
@@ -93,7 +97,7 @@ func (l *lineReader) lineHasPrefix(line []byte, prefix string, readErr error) (b
 // the next line in the Reader with the trailing newline stripped. It will return an
 // io.EOF error when there is nothing left to read (at the start of the function call). It
 // will return any other errors it receives from the underlying call to ReadBytes.
-func readLine(r *bufio.Reader) ([]byte, error) {
+func readLine(r *bufio.Reader, dropCr bool) ([]byte, error) {
 	line_, err := r.ReadBytes('\n')
 	if err == io.EOF {
 		if len(line_) == 0 {
@@ -108,7 +112,10 @@ func readLine(r *bufio.Reader) ([]byte, error) {
 		return nil, err
 	}
 	line := line_[0 : len(line_)-1]
-	return dropCR(line), nil
+	if dropCr {
+		return dropCR(line), nil
+	}
+	return line, nil
 }
 
 // dropCR drops a terminal \r from the data.
