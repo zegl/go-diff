@@ -510,9 +510,9 @@ func handleEmpty(fd *FileDiff) (wasEmpty bool) {
 	isNewFile := (lineCount == 3 || lineCount == 4 && lineHasPrefix(3, "Binary files ") || lineCount > 4 && lineHasPrefix(3, "GIT binary patch")) &&
 		lineHasPrefix(1, "new file mode ")
 
-	isModeChange := lineCount == 3 && linesHavePrefixes(1, "old mode ", 2, "new mode ")
+	isModeChange := lineCount >= 3 && linesHavePrefixes(1, "old mode ", 2, "new mode ")
 
-	isBinaryPatch := lineCount == 3 && lineHasPrefix(2, "Binary files ") || lineCount > 3 && lineHasPrefix(2, "GIT binary patch")
+	isBinaryPatch := lineCount >= 3 && lineHasPrefix(2, "Binary files ") || lineCount > 3 && lineHasPrefix(2, "GIT binary patch")
 
 	if !isModeChange && !isCopy && !isRename && !isBinaryPatch && !isNewFile && !isDeletedFile {
 		return false

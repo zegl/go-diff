@@ -287,6 +287,22 @@ func TestParseFileDiffHeaders(t *testing.T) {
 				},
 			},
 		},
+		{
+			filename: "sample_binary_mode_changed.diff",
+			wantDiff: &FileDiff{
+				OrigName: "a/app/bin",
+				OrigTime: nil,
+				NewName:  "b/app/bin",
+				NewTime:  nil,
+				Extended: []string{
+					"diff --git a/app/bin b/app/bin",
+					"old mode 100755",
+					"new mode 100644",
+					"index 16edd4f..9b8fb76",
+					"Binary files a/app/bin and b/app/bin differ",
+				},
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.filename, func(t *testing.T) {
