@@ -821,6 +821,48 @@ func TestParseMultiFileDiffHeaders(t *testing.T) {
 	}
 }
 
+func TestParseAndPrintWithQuotes(t *testing.T) {
+	tests := []struct {
+		filename         string
+		wantParseErr     error
+		expectedFilename string
+	}{
+		{filename: "complicated_filenames.diff", expectedFilename: "complicated_filenames_expected_quoted.diff"},
+		{filename: "sample_file_extended_binary_rename.diff", expectedFilename: "sample_file_extended_binary_rename_expected_quoted.diff"},
+	}
+	for _, test := range tests {
+		diffData, err := ioutil.ReadFile(filepath.Join("testdata", test.filename))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedDiffData, err := ioutil.ReadFile(filepath.Join("testdata", test.expectedFilename))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		diffs, err := ParseMultiFileDiff(diffData)
+		if !reflect.DeepEqual(err, test.wantParseErr) {
+			t.Errorf("%s: got ParseFileDiff err %v, want %v", test.filename, err, test.wantParseErr)
+			continue
+		}
+		if test.wantParseErr != nil {
+			continue
+		}
+
+		printed, err := PrintMultiFileDiff(diffs, WithQuotedNames())
+		if err != nil {
+			t.Errorf("%s: PrintFileDiff: %s", test.filename, err)
+		}
+
+		t.Logf("diff=%s", string(printed))
+		if !bytes.Equal(printed, expectedDiffData) {
+			t.Errorf("diff=%s", cmp.Diff(expectedDiffData, printed))
+			// t.Errorf("%s: printed file diff != original file diff\n\n# PrintFileDiff output - Original:\n%s", test.filename, cmp.Diff(expectedDiffData, printed))
+		}
+	}
+}
+
 func TestParseFileDiffAndPrintFileDiff(t *testing.T) {
 	tests := []struct {
 		filename     string
