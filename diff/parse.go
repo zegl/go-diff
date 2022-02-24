@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -379,8 +380,55 @@ func (r *FileDiffReader) ReadExtendedHeaders() ([]string, error) {
 
 		r.line++
 		r.offset += int64(len(line))
+
 		xheaders = append(xheaders, string(line))
+		sort.SliceStable(xheaders, func(i, j int) bool {
+			return xheadersLessFunc(xheaders[i], xheaders[j])
+		})
 	}
+}
+
+// xheadersLessFunc reports whether the header i
+// must sort before the header j.
+func xheadersLessFunc(i, j string) bool {
+	if strings.HasPrefix(i, "diff --git") {
+		return true
+	}
+
+	if strings.HasPrefix(j, "diff --git") {
+		return false
+	}
+
+	if strings.HasPrefix(i, "old mode") {
+		// old mode line must be first
+		return true
+	}
+
+	if strings.HasPrefix(j, "old mode") {
+		// old mode line must be first
+		return false
+	}
+
+	if strings.HasPrefix(i, "new mode") {
+		if strings.HasPrefix(j, "old mode") {
+			// old mode line must be first
+			return false
+		}
+		// new mode must be second
+		return true
+	}
+
+	if strings.HasPrefix(j, "new mode") {
+		if strings.HasPrefix(i, "old mode") {
+			// old mode line must be first
+			return true
+		}
+		// new mode must be second
+		return false
+	}
+
+	// doesn't matter
+	return false
 }
 
 // readQuotedFilename extracts a quoted filename from the beginning of a string,
